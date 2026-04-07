@@ -1,26 +1,20 @@
 import mongoose from "mongoose";
 
-// Connect to Cloud
-/**
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("Connection to Cloud Database Successfull");
+    // Use MongoDB Atlas if MONGO_URI exists, else fallback to local
+    const dbURI = process.env.MONGO_URI || "mongodb://localhost:27017/lms";
+
+    await mongoose.connect(dbURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log("Database connected:", dbURI);
   } catch (err) {
-    console.log("Error occured" + err);
+    console.error("Error connecting to DB:", err.message);
+    process.exit(1); // stops server if DB fails
   }
-};
- */
-
-//Connect to local db
-const connectDB = () => {
-  var db = "mongodb://localhost:27017/lms";
-  mongoose.connect(db);
-
-  const conSuccess = mongoose.connection;
-  conSuccess.once("open", (_) => {
-    console.log("Database connected:", db);
-  });
 };
 
 export default connectDB;
