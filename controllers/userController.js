@@ -102,10 +102,7 @@ export const register = async (req, res) => {
     // Determine user role based on forInstructor checkbox
     let role = "student"; // Default role
     if (forInstructor) {
-      role = "pending"; // Set to pending if applying to be instructor
-
-      // Here you would send the verification email with instructor code
-      // await sendInstructorVerificationEmail(email);
+      role = "instructor"; // Set to instructor directly
     }
 
     // Hash password and create user
@@ -119,8 +116,8 @@ export const register = async (req, res) => {
 
     // Different success messages based on role
     const successMessage =
-      role === "pending"
-        ? "Account created! Check your email for instructor verification process."
+      role === "instructor"
+        ? "Account created successfully as instructor."
         : "Account created successfully as student.";
 
     return res.status(201).json({
@@ -263,76 +260,36 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-export const verifyUser = async (req, res) => {
-  try {
-    const { code } = req.body;
-    const userId = req.id;
-
-    console.log({
-      inputCode: code,
-      userId,
-      typeOfInput: typeof code,
-      envCode: process.env.INSTRUCTOR_CODE,
-      typeOfEnv: typeof process.env.INSTRUCTOR_CODE,
-    });
-
-    // 1. Check if code matches .env
-    if (String(code).trim() !== String(process.env.INSTRUCTOR_CODE).trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid verification code",
-      });
-    }
-
-    // 2. Verify user exists and is pending
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (user.role !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "User is not pending verification",
-      });
-    }
-
-    // 3. Update role to instructor
-    user.role = "instructor";
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Verification successful! You are now an instructor.",
-      data: {
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message || "Verification failed",
-    });
-  }
-};
-
 export const getAlarmStatus = async (req, res) => {
   try {
     const userId = req.id;
 
     const user = await User.findById(userId).select("activities");
 
-    if (!user || !Array.isArray(user.activities) || user.activities.length === 0) {
-      return res.status(200).json({ warning: false, message: "No activity yet" });
+    if (
+      !user ||
+      !Array.isArray(user.activities) ||
+      user.activities.length === 0
+    ) {
+      return res
+        .status(200)
+        .json({ warning: false, message: "No activity yet" });
     }
 
     // Helper: parse legacy locale string like "Thu, Sep 11, 8:25 PM" → Date (assume current year)
     const monthMap = {
-      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
     };
     const parseLegacyTimestamp = (str) => {
       if (typeof str !== "string") return null;
@@ -355,8 +312,10 @@ export const getAlarmStatus = async (req, res) => {
     const normalizeDate = (act) => {
       if (!act) return null;
       // Prefer actual Date-like fields
-      if (act.createdAt instanceof Date && !isNaN(act.createdAt.getTime())) return act.createdAt;
-      if (act.timestamp instanceof Date && !isNaN(act.timestamp.getTime())) return act.timestamp;
+      if (act.createdAt instanceof Date && !isNaN(act.createdAt.getTime()))
+        return act.createdAt;
+      if (act.timestamp instanceof Date && !isNaN(act.timestamp.getTime()))
+        return act.timestamp;
       // Fallback: legacy string in `timestamp`
       const parsed = parseLegacyTimestamp(act.timestamp);
       return parsed;
@@ -364,13 +323,19 @@ export const getAlarmStatus = async (req, res) => {
 
     // Find most recent "Started lecture" (case-insensitive) with a usable date
     const latest = user.activities
-      .filter((a) => typeof a.action === "string" && a.action.toLowerCase() === "started lecture")
+      .filter(
+        (a) =>
+          typeof a.action === "string" &&
+          a.action.toLowerCase() === "started lecture",
+      )
       .map((a) => ({ a, d: normalizeDate(a) }))
       .filter(({ d }) => d instanceof Date && !isNaN(d.getTime()))
       .sort((x, y) => y.d - x.d)[0];
 
     if (!latest) {
-      return res.status(200).json({ warning: true, message: "No 'Started lecture' action found" });
+      return res
+        .status(200)
+        .json({ warning: true, message: "No 'Started lecture' action found" });
     }
 
     const lastLectureDate = latest.d;
