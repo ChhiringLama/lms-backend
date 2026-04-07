@@ -20,6 +20,12 @@ const PORT = process.env.PORT || 3000;
 //Pre requisite middleware
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://lms-frontend-render.onrender.com",
+];
+
 app.use(
   cors({
     origin: function (origin, callback) {
