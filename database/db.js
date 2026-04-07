@@ -6,8 +6,8 @@ const connectDB = async () => {
     const dbURI = process.env.MONGO_URI || "mongodb://localhost:27017/lms";
 
     await mongoose.connect(dbURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      // useNewUrlParser: true,
+      // useUnifiedTopology: true,
     });
 
     console.log("Database connected:", dbURI);

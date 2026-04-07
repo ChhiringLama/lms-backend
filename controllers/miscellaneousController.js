@@ -1,8 +1,10 @@
 import { User } from "../models/userModel.js";
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: 'Gmail', // Use 'Gmail' instead of host/port (recommended)
+const transporter = nodemailer.createTransporter({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER, // Your full Gmail address (e.g., "you@gmail.com")
     pass: process.env.EMAIL_PASS, // App password (if 2FA enabled)
